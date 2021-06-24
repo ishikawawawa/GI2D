@@ -6,18 +6,16 @@ import java.io.File
 import javax.imageio.ImageIO
 
 object Main extends App {
-  // todo 線の太さを考慮
-  // todo 縦マスの数を可変にする
-  // todo マスの大きさを可変にする
-
-  // 1マスの大きさ 128x128
-  // 縦11枚・横11枚
-  // 1408 x 1408
-  // 上下左右に16pxマージン
-  // 1440 x 1440
-  val width = 1440
-  val height = 1440
+  val cellSize = 128
+  val column = 11
+  val row = 12
+  val borderWeight = 4
   val margin = 16
+
+  // (セルサイズ * 列数) + (左右のマージン) + (線の太さ * (列数 + 1))
+  val width = (cellSize * column) + (margin * 2) + (borderWeight * (column + 1))
+  // (セルサイズ * 行数) + (上下のマージン) + (線の太さ * (行数 + 1))
+  val height = (cellSize * row) + (margin * 2) + (borderWeight * (row + 1))
 
   val image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
   val graphics = image.getGraphics
@@ -26,59 +24,70 @@ object Main extends App {
   graphics.setColor(Color.white)
   graphics.fillRect(0, 0, width, height)
 
+  // 枠線
+  graphics.setColor(Color.black)
+
   // 縦線
   {
-    graphics.setColor(Color.black)
-    val startX = 0 + margin
-    val endX = width - margin
-    val startY = 0 + margin
-    val endY = height - margin
+    val borderLength = (cellSize * row) + (borderWeight * (row + 1))
 
-    // 縦
-    (startX to endX by 128).foreach { x =>
-      graphics.drawLine(x, startY, x, endY)
+    (0 to column).foreach { n =>
+      val topLeftX = image.getMinX + margin
+      val offset = (cellSize + borderWeight) * n
+      val x = topLeftX + offset
+      val y = image.getMinY + margin
+
+      graphics.fillRect(x, y, borderWeight, borderLength)
     }
+  }
 
-    // 横
-    (startY to endY by 128).foreach { y =>
-      graphics.drawLine(startX, y, endX, y)
+  // 横線
+  {
+    val borderLength = (cellSize * column) + (borderWeight * (column + 1))
+
+    (0 to row).foreach { n =>
+      val topLeftY = image.getMinY + margin
+      val offset = (cellSize + borderWeight) * n
+      val x = image.getMinX + margin
+      val y = topLeftY + offset
+
+      graphics.fillRect(x, y, borderLength, borderWeight)
     }
   }
 
   // 番号
   {
-    val fontSize = 96
+    val fontSize = 72
     val font = new Font("Arial", Font.BOLD, fontSize);
     val fontMetrics = graphics.getFontMetrics(font)
+    val textHeight = fontMetrics.getHeight
+    val textAscent = fontMetrics.getAscent
     graphics.setFont(font)
 
-    val onesPlace = (0 to 9).map(n => (s"x${n}", n))
-    onesPlace.foreach {
-      case (char, n) =>
-        val strWidth = fontMetrics.stringWidth(char)
-        val strHeight = fontMetrics.getHeight
-        val ascent = fontMetrics.getAscent
+    // 1の位
+    (0 to column - 2).foreach { n =>
+      val text = s"x${n}"
+      val textWidth = fontMetrics.stringWidth(text)
 
-        val offsetX = 128 * (n + 1)
-        // (0 + マージン) + 1枚の中心X座標 - (文字列の幅 / 2) + n枚目の始点X
-        val x = (image.getMinX + margin) + (128 / 2) - (strWidth / 2) + offsetX
-        val y = (image.getMinY + margin) + (128 / 2) - (strHeight / 2) + ascent
+      val topLeftX = image.getMinX + margin + (cellSize * (n + 1)) + (borderWeight * (n + 2))
+      val topLeftY = image.getMinY + margin + borderWeight
+      val x = topLeftX + (cellSize / 2) - (textWidth / 2)
+      val y = topLeftY + (cellSize / 2) - (textHeight / 2) + textAscent
 
-        graphics.drawChars(char.toCharArray, 0, char.length, x, y)
+      graphics.drawChars(text.toCharArray, 0, text.length, x, y)
     }
 
-    val tensPlace = (0 to 9).map(n => (s"${n}x", n))
-    tensPlace.foreach {
-      case (char, n) =>
-        val strWidth = fontMetrics.stringWidth(char)
-        val strHeight = fontMetrics.getHeight
-        val ascent = fontMetrics.getAscent
+    // 10の位
+    (0 to row - 2).foreach { n =>
+      val text = s"${n}x"
+      val textWidth = fontMetrics.stringWidth(text)
 
-        val offsetY = 128 * (n + 1)
-        val x = (image.getMinX + margin) + (128 / 2) - (strWidth / 2)
-        val y = (image.getMinY + margin) + (128 / 2) - (strHeight / 2) + ascent + offsetY
+      val topLeftX = image.getMinX + margin + borderWeight
+      val topLeftY = image.getMinY + margin + (cellSize * (n + 1)) + (borderWeight * (n + 2))
+      val x = topLeftX + (cellSize / 2) - (textWidth / 2)
+      val y = topLeftY + (cellSize / 2) - (textHeight / 2) + textAscent
 
-        graphics.drawChars(char.toCharArray, 0, char.length, x, y)
+      graphics.drawChars(text.toCharArray, 0, text.length, x, y)
     }
   }
 
