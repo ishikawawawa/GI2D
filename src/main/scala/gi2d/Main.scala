@@ -7,18 +7,41 @@ import javax.imageio.ImageIO
 
 object Main extends App {
   val cellSize = 128
-  val column = 11
-  val row = 12
+  val columnNum = 11
+  val rowNum = 12
   val borderWeight = 4
   val margin = 16
 
   // (セルサイズ * 列数) + (左右のマージン) + (線の太さ * (列数 + 1))
-  val width = (cellSize * column) + (margin * 2) + (borderWeight * (column + 1))
+  val width = (cellSize * columnNum) + (margin * 2) + (borderWeight * (columnNum + 1))
   // (セルサイズ * 行数) + (上下のマージン) + (線の太さ * (行数 + 1))
-  val height = (cellSize * row) + (margin * 2) + (borderWeight * (row + 1))
+  val height = (cellSize * rowNum) + (margin * 2) + (borderWeight * (rowNum + 1))
 
   val image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
   val graphics = image.getGraphics
+
+/***
+   * n個目のマスの左上の座標を求める
+   * @param n 0始まり
+   * @return (x座標, y座標)
+   */
+  def topLeftPoint(n: Int): (Int, Int) = {
+    // n列目
+    val column = n % columnNum
+    // n行目
+    val row = n / columnNum
+
+    // ボーダーの本数
+    val xBorderNum = column + 1
+    val yBorderNum = row + 1
+
+    // 0 + マージン + (ボーダーの太さ * ボーダーの本数) + (セルサイズ * 列数)
+    val x = image.getMinX + margin + (borderWeight * xBorderNum) + (cellSize * column)
+    // 0 + マージン + (ボーダーの太さ * ボーダーの本数) + (セルサイズ * 行数)
+    val y = image.getMinY + margin + (borderWeight * yBorderNum) + (cellSize * row)
+
+    (x, y)
+  }
 
   // 背景色
   graphics.setColor(Color.white)
@@ -29,9 +52,9 @@ object Main extends App {
 
   // 縦線
   {
-    val borderLength = (cellSize * row) + (borderWeight * (row + 1))
+    val borderLength = (cellSize * rowNum) + (borderWeight * (rowNum + 1))
 
-    (0 to column).foreach { n =>
+    (0 to columnNum).foreach { n =>
       val topLeftX = image.getMinX + margin
       val offset = (cellSize + borderWeight) * n
       val x = topLeftX + offset
@@ -43,9 +66,9 @@ object Main extends App {
 
   // 横線
   {
-    val borderLength = (cellSize * column) + (borderWeight * (column + 1))
+    val borderLength = (cellSize * columnNum) + (borderWeight * (columnNum + 1))
 
-    (0 to row).foreach { n =>
+    (0 to rowNum).foreach { n =>
       val topLeftY = image.getMinY + margin
       val offset = (cellSize + borderWeight) * n
       val x = image.getMinX + margin
@@ -57,6 +80,7 @@ object Main extends App {
 
   // 番号
   {
+    // todo 文字のセンタリングが微妙にうまくいっていないため直す
     val fontSize = 72
     val font = new Font("Arial", Font.BOLD, fontSize);
     val fontMetrics = graphics.getFontMetrics(font)
@@ -65,33 +89,28 @@ object Main extends App {
     graphics.setFont(font)
 
     // 1の位
-    (0 to column - 2).foreach { n =>
+    (0 to columnNum - 2).foreach { n =>
       val text = s"x${n}"
       val textWidth = fontMetrics.stringWidth(text)
 
-      val topLeftX = image.getMinX + margin + (cellSize * (n + 1)) + (borderWeight * (n + 2))
-      val topLeftY = image.getMinY + margin + borderWeight
+      val (topLeftX, topLeftY) = topLeftPoint(n + 1)
       val x = topLeftX + (cellSize / 2) - (textWidth / 2)
       val y = topLeftY + (cellSize / 2) - (textHeight / 2) + textAscent
-
       graphics.drawChars(text.toCharArray, 0, text.length, x, y)
     }
 
     // 10の位
-    (0 to row - 2).foreach { n =>
+    (0 to rowNum - 2).foreach { n =>
       val text = s"${n}x"
       val textWidth = fontMetrics.stringWidth(text)
 
-      val topLeftX = image.getMinX + margin + borderWeight
-      val topLeftY = image.getMinY + margin + (cellSize * (n + 1)) + (borderWeight * (n + 2))
+      val (topLeftX, topLeftY) = topLeftPoint((n + 1) * columnNum)
       val x = topLeftX + (cellSize / 2) - (textWidth / 2)
       val y = topLeftY + (cellSize / 2) - (textHeight / 2) + textAscent
 
       graphics.drawChars(text.toCharArray, 0, text.length, x, y)
     }
   }
-
-  graphics.dispose()
 
   val file = new File("example.png")
   ImageIO.write(image, "png", file)
