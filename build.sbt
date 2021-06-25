@@ -8,6 +8,7 @@ lazy val root = (project in file("."))
   .settings(
     name := "GI2D",
     libraryDependencies ++= Seq(
+      "com.github.scopt" %% "scopt" % "4.0.1",
       "org.scalatest" %% "scalatest" % "3.2.8"
     )
   )
