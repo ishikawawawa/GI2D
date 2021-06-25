@@ -10,11 +10,11 @@ import javax.imageio.ImageIO
 object Main extends App {
   OParser.parse(Config.parser, args, Config()) match {
     case Some(config) => {
-      val cellSize = 128
+      val cellSize = config.cellSize
       val columnNum = 11
-      val rowNum = 12
-      val borderWeight = 4
-      val margin = 16
+      val rowNum = config.line + 1
+      val borderWeight = config.borderWeight
+      val margin = config.margin
 
       // (セルサイズ * 列数) + (左右のマージン) + (線の太さ * (列数 + 1))
       val width = (cellSize * columnNum) + (margin * 2) + (borderWeight * (columnNum + 1))
@@ -137,8 +137,7 @@ object Main extends App {
         }
       }
 
-      val file = new File("example.png")
-      ImageIO.write(image, "png", file)
+      ImageIO.write(image, "png", new File(config.output))
     }
     case _ => {
       // todo オプションの読み込みに失敗した旨をログに出力
